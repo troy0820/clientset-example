@@ -7,6 +7,9 @@ import (
 
 	v1 "get.porter.sh/operator/api/v1"
 	"get.porter.sh/operator/clientset/v1/porterclientset"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -86,4 +89,25 @@ func main() {
 	}
 	log.Print("done getting the credential sets")
 
+	log.Print("creating a AgentConfig")
+	porterAgentAction := &v1.AgentAction{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "porter-agent-action",
+			Namespace: "default",
+		},
+		Spec: v1.AgentActionSpec{
+			Command: []string{"curl", "-v", "https://porter.sh"},
+		},
+	}
+
+	err = porterClient.Create(ctx, porterAgentAction)
+	if err != nil {
+		log.Fatal("error creating porter agent action")
+	}
+	gotPorterAgentAction := &v1.AgentAction{}
+	err = porterClient.Get(ctx, types.NamespacedName{Name: "porter-agent-action", Namespace: "default"}, gotPorterAgentAction)
+	if err != nil {
+		log.Fatal("error getting porter agent action")
+	}
+	log.Printf("porter agent action: %+v", gotPorterAgentAction)
 }
